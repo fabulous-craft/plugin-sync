@@ -74,7 +74,7 @@ while [[ "$#" -gt 0 ]]; do
     case $1 in
         --clean) clean=1 ;;
         --sync) sync=1 ;;
-        -h|--help) help ; exit 1 ;;
+        -h|--help) help ; exit 0 ;;
         -s|--source) source="$2"; shift ;;
         -t|--target) target="$2"; shift ;;
         -d|--debug) debug=1 ;;
@@ -90,7 +90,7 @@ if [[ $clean == '' ]] && [[ $sync == '' ]]; then
     exit 0
 fi
 
-if [[ !$nointro ]]; then
+if [[ $nointro == '' ]]; then
     intro
 fi
 
@@ -99,15 +99,15 @@ source_dir="$( cd "$source" 2>/dev/null && pwd )"
 # get parent directory
 target_dir="$( cd "$target" 2>/dev/null && pwd )"
 
-debug "Absolute source directory: \"$source_dir\""
-debug "Absolute target directory: \"$target_dir\""
+debug "absolute source directory: \"$source_dir\""
+debug "absolute target directory: \"$target_dir\""
 
 if [[ $source_dir == '' ]]; then
-    panic "Invalid source directory \"$source\"!"
+    panic "invalid source directory \"$source\"!"
 fi
 
 if [[ $target_dir  == '' ]]; then
-    panic "Invalid target directory \"$target\"!"
+    panic "invalid target directory \"$target\"!"
 fi
 
 # Function Definition
@@ -118,10 +118,10 @@ function reletive_to_target_directory {
 function do_clean {
     LOGPREFIX='Clean'
 
-    info "Removing existing hardlinks..."
+    info "removing existing hardlinks..."
     HFILES="$( find $target_dir -type f -links +1 2>&1)"
     if [[ $? != 0 ]]; then
-        panic "failed to link hardlinks for target directory \"$target_dir\", message: \"$HFILES\", check if source and target are correct or run with -d for debug info"
+        panic "failed to list hardlinks for target directory \"$target_dir\", message: \"$HFILES\", check if source and target are correct or run with -d for debug info"
     fi
     if [[ $HFILES == '' ]]; then
         warn "no hardlink found in target directory \"$target_dir\""
@@ -129,7 +129,7 @@ function do_clean {
     # remove hardlinks
     while IFS= read -r line; do
         if [[ $line != '' ]] && [[ -f $line ]]; then
-            debug "Removing \"$line\"..."
+            debug "removing \"$line\"..."
             rm "$line"
             if [[ $? != 0 ]]; then
                 panic "failed to remove \"$line\", check if source and target are correct or run with -d for debug info"
@@ -137,7 +137,7 @@ function do_clean {
         fi
     done <<< "$HFILES"
 
-    info "Removing existing symlinks..."
+    info "removing existing symlinks..."
     # find $target_dir -xtype l -delete
     HFILES="$( find -L $target_dir -maxdepth 1 -xtype l 2>&1)"
     if [[ $? != 0 ]]; then
@@ -149,7 +149,7 @@ function do_clean {
     while IFS= read -r line; do
         if [[ $line != '' ]] && [[ -d $line ]]; then
             basename_file=$( basename "$line" )
-            debug "Removing \"$line\"..."
+            debug "removing \"$line\"..."
             rm "$line"
             if [[ $? != 0 ]]; then
                 panic "failed to remove \"$line\", check if source and target are correct or run with -d for debug info"
@@ -157,7 +157,7 @@ function do_clean {
         fi
     done <<< "$HFILES"
     # remove broken hardlinks that are not preserved
-    info "Removing broken hardlinks..."
+    info "removing broken hardlinks..."
     HFILES="$( find $source_dir/*.jar -type f 2>&1)"
     if [[ $? != 0 ]]; then
         panic "failed to list plugin jar files in source directory \"$source_dir\", message: \"$HFILES\", check if source and target are correct or run with -d for debug info"
@@ -171,7 +171,7 @@ function do_clean {
             src=$( echo "$line" )
             dst=$( echo "$target_dir/$basename_file" )
             if [[ -f $dst ]]; then
-                debug "Removing \"$dst\" to be replaced with a hardlink to \"$src\"..."
+                debug "removing \"$dst\" to be replaced with a hardlink to \"$src\"..."
                 rm "$dst"
                 if [[ $? != 0 ]]; then
                     panic "failed to remove \"$dst\", check if source and target are correct or run with -d for debug info"
